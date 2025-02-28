@@ -7,7 +7,7 @@ export const signup=async(req,res)=>{
     const {fullName,email,password}=req.body;
     try{
         if(!fullName||!email||!password){
-            res.status(400).json({message:"All fields are required"})
+            return res.status(400).json({message:"All fields are required"})
         }
         if(password.length<6){
             return res.status(400).json({message:"Password Must be 6 characters long"});
@@ -39,7 +39,9 @@ export const signup=async(req,res)=>{
         }
 
     }catch(error){
-        console.log("error in signup controller ",error.message);
+        console.log("Error in signup controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+
     }
 }
 export const login=async(req,res)=>{
@@ -52,7 +54,7 @@ export const login=async(req,res)=>{
 
         const isPasswordCorrect=await bcrypt.compare(password,user.password);
         if(!isPasswordCorrect){
-            return res.status(400).json({messages:"Invalid Credentials"});
+            return res.status(400).json({message:"Invalid Credentials"});
         }
         generateToken(user._id,res);
         res.status(200).json({
@@ -79,7 +81,6 @@ export const logout=(req,res)=>{
 }
 
 export const updateProfile=async(req,res)=>{
-    console.log('Received updateProfile request');
     try{
         const {profilePic}=req.body;
         const userId=req.user._id;
@@ -88,12 +89,9 @@ export const updateProfile=async(req,res)=>{
             return res.status(400).json({message:"Profile pic is required"});
         }
 
-        console.log('Uploading profile pic to Cloudinary');
         const uploadResponse=await cloudinary.uploader.upload(profilePic);
-        console.log('Cloudinary upload response:', uploadResponse);
 
         const updatedUser=await User.findByIdAndUpdate(userId,{profilePic:uploadResponse.secure_url},{new:true})
-        console.log('User profile updated successfully:', updatedUser);
         res.status(200).json(updatedUser);
     }catch(error){
         console.log("update profile error: ",error);
